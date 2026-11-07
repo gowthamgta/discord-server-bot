@@ -1,0 +1,20 @@
+# Secrets & environment variables (NEVER COMMIT)
+.env
+*.env
+*.log
+
+# Server database & local runtime state
+data/server_data.json
+data/*.tmp
+
+# Build / upload artifacts
+*.zip
+hf_upload/
+heavencloud_upload/
+
+# Python cache & virtual environments
+__pycache__/
+*/__pycache__/
+.venv/
+venv/
+ENV/

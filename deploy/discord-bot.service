@@ -1,0 +1,19 @@
+[Unit]
+Description=Kralveth Discord Server Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__BOT_USER__
+WorkingDirectory=__BOT_DIR__
+ExecStart=__BOT_DIR__/.venv/bin/python bot.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONIOENCODING=utf-8
+# The web health page only exists for hosts like Hugging Face; a VM doesn't need it
+Environment=HEALTH_SERVER_DISABLED=1
+
+[Install]
+WantedBy=multi-user.target
