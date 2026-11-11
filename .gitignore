@@ -6,6 +6,7 @@
 # Server database & local runtime state
 data/server_data.json
 data/*.tmp
+data/rag_store/
 
 # Build / upload artifacts
 *.zip
@@ -15,6 +16,8 @@ heavencloud_upload/
 # Python cache & virtual environments
 __pycache__/
 */__pycache__/
+*/**/__pycache__/
+.pytest_cache/
 .venv/
 venv/
 ENV/

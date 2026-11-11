@@ -18,6 +18,7 @@ A comprehensive, modular Discord server management bot written in **Python (`dis
 
 | Module | Features & Slash Commands |
 | :--- | :--- |
+| **🧠 RAG & Knowledge Base** | In-memory & persistent vector store, recursive character chunking with overlap, dense embeddings (Gemini `text-embedding-004`), grounded Q&A with source citations, multi-tenant server isolation (`/ask`, `/rag upload`, `/rag index_channel`, `/rag add_snippet`, `/rag search`, `/rag docs`, `/rag delete_doc`, `/rag clear`) |
 | **🛡️ Core Moderation** | `/kick`, `/ban`, `/unban`, `/timeout` (mute), `/untimeout`, `/clear` (purge), `/warn`, `/warnings`, `/clearwarns`, `/slowmode`, `/lock`, `/unlock` |
 | **👋 Welcome & Auto-Role** | Aesthetic greeting embeds with avatar & member count, farewell logs, `/welcome set_channel`, `/welcome set_autorole`, `/welcome test` |
 | **🤖 Auto-Moderation** | Automatic anti-spam rate limiter, unauthorized Discord invite link blocker, blacklisted words filter (`/automod add_word`, `/automod remove_word`, `/automod list_words`) |
@@ -33,6 +34,36 @@ A comprehensive, modular Discord server management bot written in **Python (`dis
 | **⚙️ Server Utilities** | `/serverinfo`, `/userinfo`, `/botinfo`, `/ping`, `/reload` (owner), `/help` |
 
 ---
+
+
+---
+
+## 🧠 Retrieval-Augmented Generation (RAG) System Architecture
+
+This bot features a production-grade, multi-tenant **Retrieval-Augmented Generation (RAG)** pipeline designed for Discord communities:
+
+1. **Document Ingestion & Multi-Format Parsing**:
+   - Parses `.pdf`, `.md`, `.txt`, `.json`, `.csv`, and Discord channel message histories directly into structured documents.
+   - Preserves granular metadata (guild ID, channel ID, document source, page number, author, creation timestamp).
+
+2. **Recursive Character Chunking**:
+   - Splits text hierarchically using sentence and paragraph boundary separators (`\n\n`, `\n`, `. `, `? `, `! `, ` `).
+   - Uses configurable chunk sizes (~550 chars) with sliding-window overlap (~90 chars) to prevent loss of context across boundaries.
+
+3. **Dense Vector Embeddings & Offline Resilience**:
+   - Primary: Google Gemini `text-embedding-004` (768-dimensional dense embeddings).
+   - Fallback: Deterministic normalized term/character n-gram hashing vectorizer (384-dimensional) ensuring zero fatal crashes during network partitions or offline testing.
+
+4. **In-Memory & Persistent Vector Store**:
+   - High-throughput cosine similarity indexing powered by vectorized NumPy matrix multiplications (`M @ q`).
+   - Multi-tenant tenant-level data isolation: vectors are strictly partitioned per Discord Guild.
+   - Automated compressed persistence to disk (`data/rag_store/vectors.npz` and `chunks_meta.json`).
+
+5. **Grounded Generation & Source Attribution**:
+   - Semantic retrieval with confidence thresholding to prevent hallucination on out-of-domain questions.
+   - Injects structured source tags and forces LLM grounding.
+   - Formats Discord embeds with confidence percentages, source pills, and latency statistics.
+   - Integrates directly with the bot's conversational chatter module (`cogs/chatter.py`) for contextual grounded conversations.
 
 ## 🚀 Step-by-Step Setup Guide (2 Minutes)
 

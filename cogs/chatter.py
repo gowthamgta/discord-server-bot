@@ -228,11 +228,24 @@ class Chatter(commands.Cog):
             who = "your earlier message" if replied_to.author.id == self.bot.user.id else f"{speaker_label(replied_to.author, replied_to.guild)}'s message"
             reply_note = f"\n(They are replying to {who}: \"{self._clean(replied_to)[:400]}\")"
 
+        # Check for relevant server knowledge via RAG
+        rag_context = ""
+        try:
+            from rag_core.rag_service import rag_service
+            guild_id = trigger_msg.guild.id if trigger_msg.guild else None
+            matches = await rag_service.search(user_text, guild_id=guild_id, top_k=2, min_score=0.42)
+            if matches:
+                rag_lines = [f"- [{m[0].metadata.get('source', 'docs')}]: {m[0].content[:220]}" for m in matches]
+                rag_context = "\n\nRelevant Server Knowledge (reference naturally if helpful):\n" + "\n".join(rag_lines)
+        except Exception:
+            pass
+
         if gemini_queue.is_gemini_active:
             prompt = (
                 f"{system_prompt(trigger_msg.guild.id)}\n\n"
                 f"Recent chat in #{getattr(channel, 'name', 'chat')}:\n"
                 + ("\n".join(history_lines) or "(no earlier messages)")
+                + rag_context
                 + (f"\n\nYou were called into this chat a few minutes ago and are following along. Now "
                    f"{speaker_label(trigger_msg.author, trigger_msg.guild)} says: {user_text}{reply_note}\n"
                    f"It may not be meant for you. Join in only if it's about you, a question to the whole chat, or "
