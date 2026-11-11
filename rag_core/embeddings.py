@@ -1,6 +1,6 @@
 """
 Embedding Engine for RAG.
-Generates dense vector embeddings using Google GenAI (text-embedding-004).
+Generates dense vector embeddings using Google GenAI (gemini-embedding-001).
 Includes a local deterministic vectorizer fallback to ensure testability and graceful degradation.
 """
 
@@ -24,15 +24,16 @@ except ImportError:
 class EmbeddingEngine:
     """
     Manages vector embedding generation.
-    Primary: Google Gemini text-embedding-004 (768-dim dense embeddings).
+    Primary: Google Gemini `gemini-embedding-001` (Google's current official text embedding model).
     Fallback: Normalized term/n-gram hashing vectorizer (384-dim) for offline resilience.
     """
 
-    MODEL_NAME = "text-embedding-004"
+    DEFAULT_MODEL = "gemini-embedding-001"
     FALLBACK_DIM = 384
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, model_name: Optional[str] = None):
         self.api_key = api_key or getattr(config, "GEMINI_API_KEY", "").strip()
+        self.model_name = model_name or self.DEFAULT_MODEL
         self._client = None
         self._init_client()
 
@@ -40,7 +41,7 @@ class EmbeddingEngine:
         if GENAI_AVAILABLE and self.api_key and self.api_key != "YOUR_GEMINI_API_KEY_HERE":
             try:
                 self._client = genai.Client(api_key=self.api_key)
-                logger.info("Initialized Google GenAI embedding client.")
+                logger.info(f"Initialized Google GenAI embedding client with model {self.model_name}.")
             except Exception as e:
                 logger.warning(f"Could not initialize GenAI client: {e}. Fallback vectorizer will be used.")
                 self._client = None
@@ -100,10 +101,9 @@ class EmbeddingEngine:
                 all_embeddings: List[List[float]] = []
                 for i in range(0, len(texts), batch_size):
                     batch = texts[i : i + batch_size]
-                    # Call Google GenAI embed_content in thread pool
                     response = await asyncio.to_thread(
                         self._client.models.embed_content,
-                        model=self.MODEL_NAME,
+                        model=self.model_name,
                         contents=batch,
                     )
                     if hasattr(response, "embeddings") and response.embeddings:
@@ -115,7 +115,7 @@ class EmbeddingEngine:
                         raise RuntimeError("No embeddings returned by Google GenAI.")
                 return all_embeddings
             except Exception as e:
-                logger.warning(f"Google GenAI embedding failed ({e}); falling back to local vectorizer.")
+                logger.warning(f"Google GenAI embedding with {self.model_name} failed ({e}); falling back to local vectorizer.")
 
         # Fallback path
         return [self._generate_fallback_embedding(t).tolist() for t in texts]
